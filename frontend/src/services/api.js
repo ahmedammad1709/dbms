@@ -13,7 +13,7 @@ api.interceptors.response.use(
     if (msg) error.message = msg;
     const code = error?.response?.data?.code || null;
     const status = error?.response?.status || null;
-    if ((status === 401 || status === 403) && (code === "ACCOUNT_SUSPENDED" || code === "ACCOUNT_NOT_FOUND")) {
+    if ((status === 401 || status === 403) && code === "ACCOUNT_SUSPENDED") {
       try {
         window.dispatchEvent(new CustomEvent("auth:force-logout", { detail: { code } }));
       } catch {

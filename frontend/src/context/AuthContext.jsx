@@ -71,7 +71,18 @@ export function AuthProvider({ children }) {
       setSession(s?.session || null);
       setCurrentUser(s?.user || null);
 
-      const out = await refreshUserData(s?.user?.id);
+      // Ensure the user exists in our backend DB (user_roles/user_profiles).
+      // Without this, backend middleware can return ACCOUNT_NOT_FOUND and the UI can bounce back to /login.
+      const sessionUserId = s?.user?.id;
+      if (sessionUserId) {
+        try {
+          await createUserRole(sessionUserId, { email: s?.user?.email || null });
+        } catch {
+          const _IGNORE = 0;
+        }
+      }
+
+      const out = await refreshUserData(sessionUserId);
       if (out?.profile?.is_suspended) {
         await logout();
       }
@@ -109,6 +120,15 @@ export function AuthProvider({ children }) {
     setCurrentUser(data?.user || data?.session?.user || null);
 
     const userId = data?.user?.id || data?.session?.user?.id;
+
+    if (userId) {
+      try {
+        await createUserRole(userId, { email: data?.user?.email || data?.session?.user?.email || email || null });
+      } catch {
+        const _IGNORE = 0;
+      }
+    }
+
     const out = await refreshUserData(userId);
     if (out?.profile?.is_suspended) {
       await logout();

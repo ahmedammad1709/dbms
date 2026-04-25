@@ -99,21 +99,23 @@ CREATE INDEX IF NOT EXISTS idx_learning_requests_teacher_seen ON learning_reques
 CREATE INDEX IF NOT EXISTS idx_learning_requests_learner_seen ON learning_requests(learner_id, learner_seen);
 
 -- Auto-maintain updated_at for updates that forget to set it.
-DO $$
+-- NOTE: Use distinct dollar-quote tags to avoid nested $$ parsing issues.
+DO $do$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_proc WHERE proname = 'set_updated_at'
   ) THEN
-    CREATE FUNCTION set_updated_at() RETURNS trigger AS $$
+    CREATE FUNCTION set_updated_at() RETURNS trigger AS $func$
     BEGIN
       NEW.updated_at = now();
       RETURN NEW;
     END;
-    $$ LANGUAGE plpgsql;
+    $func$ LANGUAGE plpgsql;
   END IF;
-END $$;
+END
+$do$;
 
-DO $$
+DO $do$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
@@ -125,7 +127,8 @@ BEGIN
     FOR EACH ROW
     EXECUTE FUNCTION set_updated_at();
   END IF;
-END $$;
+END
+$do$;
 
 CREATE TABLE IF NOT EXISTS sessions (
   id              BIGSERIAL PRIMARY KEY,
